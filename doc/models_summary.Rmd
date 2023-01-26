@@ -1,0 +1,194 @@
+---
+title: "Semantic inaccessibility and interference (replication): eye-tracking models"
+author: anonymous
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r cod1, echo=FALSE, message=FALSE, warning=FALSE, cache=FALSE}
+
+here::i_am("doc/models_summary.Rmd")
+
+library(here)
+library(tibble)
+library(knitr)
+library(dplyr)
+library(purrr)
+library(readr)
+library(fs)
+
+source(here("src/04-models_summary.R"))
+source(here("src/03-models.R"))
+
+dfs <- list.files(here("results"), pattern = "region[0-9].csv") %>%
+  map(~ read_csv(here("results", .)))
+
+opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+               results = "asis", fig.path = here("figs/"), cache = TRUE)
+options(digits = 5)
+  ## "[a-z]+_(full)|(split)_[a-z_86]+.csv"
+res <- dir_ls(here("results"), regexp = "[a-z]{2,}_((split)|(full))") %>%
+  map_dfr(read_csv, .id = "source") %>%
+  mutate(source = path_file(source))
+```
+
+
+Contrasts:
+```{r contrasts-table }
+dfs[[1]] %>%
+  group_by(subj_cond, obj_cond) %>%
+  summarise(subj_contrast = first(su),
+            obj_contrast = first(ob)) %>%
+  ## mutate("subj x obj" = subj_contrast * obj_contrast,
+  ##        ## subj
+  ##        typic_cond = if_else(typic_cond == "atypical",
+  ##                             "mis", "match"),
+  ##        ## obj
+  ##        interf_cond = if_else(interf_cond == "interf",
+  ##                              "match", "mis"),
+  ##        "condition (subj, obj)" = paste(typic_cond, interf_cond,
+  ##                                               sep = ", ")) %>%
+  mutate("subj x obj" = subj_contrast * obj_contrast,
+         subj_cond = if_else(subj_cond == "M",
+                              "match", "mis"),
+         obj_cond = if_else(obj_cond == "M",
+                               "match", "mis"),
+         "condition (subj, obj)" = paste(subj_cond, obj_cond,
+                                         sep = ", ")) %>%
+  relocate("condition (subj, obj)") %>%
+  ungroup() %>%
+  select(-c(subj_cond:obj_cond)) %>%
+  rename(subject = subj_contrast,
+         object = obj_contrast) %>%
+  ## this is to generate the latex table
+  ## select(starts_with("condition"):object) %>%
+  ## kable(format = "latex")
+  kable()
+```
+
+## Total fixation duration
+
+Total fixations, all regions.
+
+Full models.
+
+```{r tot }
+res %>%
+  filter(source == "totfixdur_full_models.csv") %>%
+  select(-source) %>%
+  kable()
+```
+
+```{r pps1, results = "markup" }
+post_plots("totfixdur", dfs, .return = "full_models")
+post_plots("totfixdur", dfs, make_plot_func = pp_check, .return = "full_models")
+```
+
+
+## Re-reading duration
+
+Data was excluded when the subj did not re-read the region.
+
+Full models.
+
+```{r rrdur }
+res %>%
+  filter(source == "rrdur_full_models.csv") %>%
+  select(-source) %>%
+  kable()
+```
+
+```{r pps_rrdur, results = "markup" }
+post_plots("rrdur", dfs, .return = "full_models")
+post_plots("rrdur", dfs, make_plot_func = pp_check, .return = "full_models")
+```
+
+
+## First pass regression path
+
+`rpdur`
+
+```{r rpdur }
+res %>%
+  filter(source == "rpdur_full_models.csv") %>%
+  select(-source) %>%
+  kable()
+```
+
+```{r pps_rpdur, results = "markup" }
+post_plots("rpdur", dfs, .return = "full_models")
+post_plots("rpdur", dfs, make_plot_func = pp_check, .return = "full_models")
+```
+
+## First pass
+
+
+First pass first gaze, `gdur`. 
+
+```{r gdur }
+res %>%
+  filter(source == "gdur_full_models.csv") %>%
+  select(-source) %>%
+  kable()
+```
+
+```{r pps_gdur, results = "markup" }
+post_plots("gdur", dfs, .return = "full_models")
+post_plots("gdur", dfs, make_plot_func = pp_check, .return = "full_models")
+```
+
+
+## Right bounded
+
+Aka first pass total gaze, `tgdur`. 
+
+```{r tgdur }
+res %>%
+  filter(source == "tgdur_full_models.csv") %>%
+  select(-source) %>%
+  kable()
+```
+
+```{r pps_tgdur, results = "markup" }
+post_plots("tgdur", dfs, .return = "full_models")
+post_plots("tgdur", dfs, make_plot_func = pp_check, .return = "full_models")
+```
+
+## Regressions
+
+Probability of regression, `abs(gbck - 2)`. Bernoulli likelihood with logistic link, results on the logistic scale.
+Full models.
+
+```{r gbck }
+res %>%
+  filter(source == "gbck_full_models.csv") %>%
+  select(-source) %>%
+  kable()
+```
+
+```{r pps_gbck, results = "markup" }
+post_plots("gbck", dfs, .return = "full_models")
+post_plots("gbck", dfs, make_plot_func = pp_check, .return = "full_models")
+```
+
+
+
+## Re-readings
+
+`rr`. probability of re-reading  
+Bernoulli likelihood with logistic link, results on the logistic scale.
+
+```{r rr }
+res %>%
+  filter(source == "rr_full_models.csv") %>%
+  select(-source) %>%
+  kable()
+```
+
+```{r pps_rr, results = "markup" }
+post_plots("rr", dfs, .return = "full_models")
+post_plots("rr", dfs, make_plot_func = pp_check, .return = "full_models")
+```
+
