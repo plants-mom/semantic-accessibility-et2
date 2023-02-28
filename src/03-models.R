@@ -13,10 +13,15 @@ library(purrr)
 options(mc.cores = parallel::detectCores())
 
 
+##
+## if name == TRUE, give the model file a unique name
+## if name == FALSE, name the model file: variable_r<region_number>
+## if name is a string, name the model file: string_variable_r<region_number>
+##
 full_models <- function(data_list, dv_name, .priors, remove_zeros = TRUE,
                         .family = NULL,
                         optimize_mem = FALSE,
-                        unique_name = FALSE) {
+                        name = FALSE) {
   frm <- formula(~ 1 + su * ob +
     (1 + su * ob | item) +
     (1 + su * ob | subj)) %>%
@@ -28,10 +33,12 @@ full_models <- function(data_list, dv_name, .priors, remove_zeros = TRUE,
 
   sel_data <- prepare_data(data_list, dv_name, remove_zeros)
 
-  if (unique_name == TRUE) {
+  if (name == TRUE) {
     mname <- paste(format(Sys.time(), "%s"), dv_name, "r", sep = "_")
-  } else {
+  } else if (name == FALSE) {
     mname <- paste(dv_name, "r", sep = "_")
+  } else {
+    mname <- paste(name, dv_name, "r", sep = "_")
   }
 
   full_ms <- sel_data %>%
@@ -111,6 +118,24 @@ fit_count_measures <- function(data_list) {
   )
 }
 
+fit_combined_data <- function() {
+  combd <- read_csv(here("results/combined_data.csv")) %>%
+    mutate(
+      # we have to add this because prepare_data needs subj_cond
+      "subj_cond" = if_else(su == 1, "M", "MM"),
+      "obj_cond" = if_else(ob == 1, "M", "MM")
+    ) %>%
+    relocate(subj_cond, .before = ob) %>%
+    split(.$region)
+
+
+  c("totfixdur", "tgdur") %>%
+    walk(~ full_models(combd, .,
+      .priors = priors, optimize_mem = TRUE,
+      name = "comb"
+    ))
+}
+
 
 main <- function() {
   source(here("src/priors.R"))
@@ -121,6 +146,7 @@ main <- function() {
   ## this might needed to be done in two stages
   fit_main_measures(dfs)
   fit_count_measures(dfs)
+  fit_combined_data()
 }
 
 
