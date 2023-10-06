@@ -23,8 +23,8 @@ list_rename <- function(.x, ..., .strict = TRUE) {
   .x
 }
 
-msummary <- function(data_list, id = "region") {
-  map(data_list, ps_rename) %>%
+msummary <- function(model_list, id = "region") {
+  map(model_list, ps_rename) %>%
     bind_rows(.id = id)
 }
 
@@ -34,17 +34,38 @@ ps_rename <- compose(
 )
 
 make_plot <- compose(
-  ~ mcmc_intervals(.x, prob = 0.95, prob_outer = 1),
+  ~ mcmc_intervals(.x, prob = 0.5, prob_outer = 0.95),
   ~ relabel_samples(.),
   ~ posterior_samples(., pars = "^b_[^I]")
 )
 
+## This is a bit ugly.
+##
+## .return argument controls which model to use to create plots
+## "available" uses models from the models dir which match a var_name.
+## In that case var_name is the regex pattern prefixed by with /
+## and data_list can be empty.
+##
+## "full_models" will try to get the full models using the
+## function from the 03-models.R.
+## Note that, this might result in additional models being fit
+## (particularly when the data list contains regions for which no model
+## is available).
 post_plots <- function(var_name, data_list,
                        make_plot_func = make_plot,
-                       .return = c("full_models", "split_models")) {
+                       .return = c(
+                         "available",
+                         "full_models",
+                         "split_models"
+                       )) {
   .return <- match.arg(.return)
 
-  if (.return == "full_models") {
+  if (.return == "available") {
+    dir_ls(here("models"), regex = paste0("/", var_name)) %>%
+      set_names(compose(path_file, path_ext_remove)) %>%
+      map(readRDS) %>%
+      map(make_plot_func)
+  } else if (.return == "full_models") {
     full_models(data_list, var_name) %>%
       map(make_plot_func)
   } else if (.return == "split_models") {
