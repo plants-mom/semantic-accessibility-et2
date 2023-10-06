@@ -88,6 +88,37 @@ prepare_data <- function(data_list, dv_name, remove_zeros) {
 
 
 ##
+## fit models split by subject condition
+##
+split_models <- function(data_list, dv_name,
+                         .priors = priors,
+                         remove_zeros = TRUE, .family = NULL) {
+  if (is.null(.family)) {
+    .family <- ifelse(dv_name %in% c("gbck", "rr"), "bernoulli", "lognormal")
+  }
+
+  sel_data <- prepare_data(data_list, dv_name, remove_zeros)
+
+  frm <- formula(~ 1 + ob + (1 + ob | item) + (1 + ob | subj)) %>%
+    update.formula(paste0(dv_name, "~ . "))
+
+  split_ms <- sel_data %>%
+    map(~ select(., -su)) %>%
+    map(~ split(., .$subj_cond)) %>%
+    map(~ set_names(., ~ if_else(. == "M", "subj_match", "mis"))) %>%
+    map(~ imap(., ~ brm(frm,
+      family = .family, prior = .priors, iter = 4000,
+      data = .x, file = here("models", paste0(
+        dv_name, "_", .y, "_r",
+        .x$region[1]
+      ))
+    )))
+  return(split_ms)
+}
+
+
+
+##
 ## I don't think this is needed
 ##
 get_model <- function(dv_name, region, type = "full_models") {
@@ -99,12 +130,19 @@ get_model <- function(dv_name, region, type = "full_models") {
     pluck(paste0("region_", region))
 }
 
+fit_split_models <- function(data_list) {
+  ## c("totfixdur", "tgdur") %>%
+  c("tgdur") %>%
+    walk(~ split_models(data_list, ., .priors = priors))
+}
+
 fit_main_measures <- function(data_list) {
   c("rrdur", "totfixdur", "gdur", "rpdur", "tgdur") %>%
     walk(~ full_models(data_list, ., .priors = priors, optimize_mem = TRUE))
 }
 
 fit_count_measures <- function(data_list) {
+  ## 0 here is missing data
   map(data_list, ~ filter(., gbck != 0)) %>%
     map(., ~ mutate(., gbck = abs(gbck - 2))) %>%
     full_models(., "gbck",
@@ -112,6 +150,7 @@ fit_count_measures <- function(data_list) {
       remove_zeros = FALSE, optimize_mem = TRUE
     )
 
+  ## here 0 is meaningful
   full_models(data_list, "rr",
     .priors = priors_binom,
     remove_zeros = FALSE, optimize_mem = TRUE
@@ -141,12 +180,14 @@ main <- function() {
   source(here("src/priors.R"))
 
   dfs <- list.files(here("results"), pattern = "region[5-8].csv") %>%
+  ## dfs <- list.files(here("results"), pattern = "region[7-8].csv") %>%
     map(~ read_csv(here("results", .)))
 
-  ## this might needed to be done in two stages
+  ## this might needed to be done in multiplie stages
   fit_main_measures(dfs)
   fit_count_measures(dfs)
   fit_combined_data()
+  fit_split_models(dfs)
 }
 
 
