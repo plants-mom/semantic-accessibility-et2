@@ -10,12 +10,17 @@ library(purrr)
 library(dplyr)
 
 
-dataf <- read_csv(here("results/allACTFiles_clean.csv")) %>%
+dataf <- read_csv(
+  here("results/allACTFiles_clean_sacccadtetime_removed.csv")
+) %>%
   mutate(
     su = if_else(subj_cond == "MM", -1, 1),
     ob = if_else(obj_cond == "MM", -1, 1),
     ## additional variables
-    rrdur = totfixdur - (gdur - gsacc), # re-reading duration
+    ## rrdur = totfixdur - (gdur - gsacc), # re-reading duration
+    ## corrected re-reading duration;
+    ## we don't subtract gsacc because that was already done
+    rrdur = totfixdur - gdur,
     rr = as.numeric(rrdur > 0)
   )
 
