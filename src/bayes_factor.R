@@ -6,12 +6,15 @@
 here::i_am("src/bayes_factor.R")
 
 library(here)
+library(fs)
+library(memuse) ## this is just for me
 library(brms)
 library(dplyr)
 library(readr)
 library(tidyr)
 library(purrr)
 library(tibble)
+library(rstan)
 library(bridgesampling)
 options(mc.cores = parallel::detectCores())
 
@@ -19,7 +22,11 @@ source(here("src/priors.R"))
 
 models <- function(dv_name, region_no, subj_condition,
                    prior_mu = 0, prior_sigma = 1) {
-  message(paste("\n", "Fitting", dv_name, "region", region_no, "\n"))
+  message(paste(
+    "\n", "Fitting", dv_name, "region", region_no,
+    "subj_cond", subj_condition,
+    "mu", prior_mu, "sigma", prior_sigma, "\n"
+  ))
   mdata <- read_csv(here("results/combined_data.csv")) %>%
     filter(
       region == region_no, totfixdur > 0,
@@ -64,7 +71,11 @@ models <- function(dv_name, region_no, subj_condition,
     data = mdata,
     file = here(
       "models",
-      paste0("bf_", dv_name, region_no, "m", prior_mu, "sd", prior_sigma)
+      paste0(
+        "bf_", dv_name, "subj_",
+        tolower(subj_condition),
+        region_no, "m", prior_mu, "sd", prior_sigma
+      )
     )
   )
 
@@ -74,7 +85,10 @@ models <- function(dv_name, region_no, subj_condition,
     iter = 4000,
     warmup = 2000,
     data = mdata,
-    file = here("models", paste0("bf_null_", dv_name, region_no))
+    file = here("models", paste0(
+      "bf_null_", dv_name, "subj_",
+      tolower(subj_condition), region_no
+    ))
   )
 
   return(list(m1 = m, m_null = m_null, params = params))
@@ -106,12 +120,18 @@ bf_stability <- function(samples,
 
   for (n in seq(iters)) {
     message(paste(format(Sys.time(), "%H:%M:%S"), n, "out of", iters))
+    message("Memory info:")
+    print(Sys.meminfo())
+    message("Memory used by R:")
+    print(Sys.procmem())
 
     model1_up <- update(model1,
       iter = samples, warmup = 2000,
       control = list(adapt_delta = 0.99, max_treedepth = 15),
       save_pars = save_pars(all = TRUE)
     )
+
+    stopifnot(get_num_divergent(model1_up$fit) == 0)
     m1_mlk <- bridge_sampler(model1_up)
     rm(model1_up)
 
@@ -120,6 +140,7 @@ bf_stability <- function(samples,
       control = list(adapt_delta = 0.99, max_treedepth = 15),
       save_pars = save_pars(all = TRUE)
     )
+    stopifnot(get_num_divergent(model1n_up$fit) == 0)
     m1n_mlk <- bridge_sampler(model1n_up)
     rm(model1n_up)
 
@@ -134,8 +155,14 @@ bf_stability <- function(samples,
       ))
     )
   }
-  write_csv(results, here("results/bayes_factor.csv"), append = TRUE)
+  if (!file_exists(here("results/bayes_factor.csv"))) {
+    ## we want column names on the first run
+    write_csv(results, here("results/bayes_factor.csv"))
+  } else {
+    write_csv(results, here("results/bayes_factor.csv"), append = TRUE)
+  }
   rm(model1, model1n) # is this even needed?
+  gc()
 }
 
 
@@ -144,15 +171,18 @@ sensitivity <- function() {
   params <- expand_grid(
     dv_name = c("totfixdur", "tgdur"),
     region_no = c(6, 7),
-    samples = 12000, iters = 5, subj_c = "MATCH",
+    samples = 12000, iters = 5, subj_c = c("MATCH", "MIS"),
     p_mu = c(0, 0, 0, -0.03, -0.027)
   ) %>%
     mutate(
-      p_sigma = rep(c(1, 0.1, 0.03, 0.009, 0.009), 4)
+      p_sigma = rep(c(1, 0.1, 0.03, 0.009, 0.009), 8)
     )
   ## this might need to be run in batches
   ## remove the rows which were run like this: params <- params[-c(1:18), ]
-  pwalk(params, bf_stability)
+
+  params %>%
+    filter(dv_name == "totfixdur", subj_c == "MIS") %>%
+    pwalk(., bf_stability)
 }
 
 
