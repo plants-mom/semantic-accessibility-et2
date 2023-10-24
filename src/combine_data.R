@@ -43,6 +43,7 @@ combine_data <- function() {
     ) %>%
     mutate(
       exp = 2,
+      subj_cond = if_else(subj_cond == "M", "MATCH", "MIS"),
       item = item + max(old_data$item),
       subj = subj + max(old_data$subj)
     )
