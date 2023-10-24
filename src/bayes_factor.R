@@ -29,9 +29,9 @@ models <- function(dv_name, region_no, subj_condition,
   ))
   mdata <- read_csv(here("results/combined_data.csv")) %>%
     filter(
-      region == region_no, totfixdur > 0,
+      region == region_no,
       subj_cond == subj_condition,
-      tgdur > 0
+      .data[[dv_name]] > 0
     ) %>%
     select(-region)
 
@@ -181,7 +181,7 @@ sensitivity <- function() {
   ## remove the rows which were run like this: params <- params[-c(1:18), ]
 
   params %>%
-    filter(dv_name == "totfixdur", subj_c == "MIS") %>%
+    filter(dv_name == "totfixdur", subj_c == "MIS", region_no == 7) %>%
     pwalk(., bf_stability)
 }
 
