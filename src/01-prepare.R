@@ -29,7 +29,11 @@ out <- dataf %>%
 
 
 out %>%
-  select(-cond, -expname) %>%
+  ## remove saccade time from fixation time (for rpdur, tgdur, gdur)
+  mutate(rpdur = rpdur - rpsacc,
+         tgdur = tgdur - tgsacc,
+         gdur = gdur - gsacc) %>%
+  select(-c(rpsacc, tgsacc, gsacc,expname, cond)) %>%
   rename(
     subj = subjectnr, subj_cond = subj, obj_cond = obj,
     region = code
