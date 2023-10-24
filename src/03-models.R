@@ -105,7 +105,7 @@ split_models <- function(data_list, dv_name,
   split_ms <- sel_data %>%
     map(~ select(., -su)) %>%
     map(~ split(., .$subj_cond)) %>%
-    map(~ set_names(., ~ if_else(. == "M", "subj_match", "mis"))) %>%
+    map(~ set_names(., ~ if_else(. == "M", "subj_match", "subj_mis"))) %>%
     map(~ imap(., ~ brm(frm,
       family = .family, prior = .priors, iter = 4000,
       data = .x, file = here("models", paste0(
@@ -161,8 +161,8 @@ fit_combined_data <- function() {
   combd <- read_csv(here("results/combined_data.csv")) %>%
     mutate(
       # we have to add this because prepare_data needs subj_cond
-      "subj_cond" = if_else(su == 1, "M", "MM"),
-      "obj_cond" = if_else(ob == 1, "M", "MM")
+      "subj_cond" = if_else(su == 1, "MATCH", "MIS"),
+      "obj_cond" = if_else(ob == 1, "MATCH", "MIS")
     ) %>%
     relocate(subj_cond, .before = ob) %>%
     split(.$region)
