@@ -26,7 +26,7 @@ dfs <- list.files(here("results"), pattern = "region[0-9].csv") %>%
   map(~ read_csv(here("results", .)))
 
 opts_chunk$set(
-  echo = FALSE, message = FALSE, warning = FALSE, error = TRUE,
+  echo = FALSE, message = FALSE, warning = FALSE, error = FALSE,
   results = "asis", fig.path = here("figs/"), cache = TRUE
 )
 options(digits = 5)
@@ -93,7 +93,7 @@ res %>%
 ```
 
 ```{r pps1, results = "markup" }
-post_plots("totfixdur", dfs) 
+post_plots("totfixdur", dfs)
 post_plots("totfixdur", dfs, make_plot_func = pp_check)
 ```
 
@@ -163,8 +163,8 @@ res %>%
 ```
 
 ```{r pps_tgdur, results = "markup" }
-post_plots("tgdur", dfs)
-post_plots("tgdur", dfs, make_plot_func = pp_check)
+post_plots("tgdur", dfs, re = "tgdur_r[5-8].rds")
+post_plots("tgdur", dfs, make_plot_func = pp_check, re = "tgdur_r[5-8].rds")
 ```
 
 ## Regressions
@@ -217,25 +217,20 @@ Models fit to the data combined from the both experiments (without subsetting on
 dir_ls(here("models"), regexp = "comb") %>%
   map(readRDS) %>%
   msummary() %>%
-    mutate(region = path_ext_remove(path_file(region))) %>%
-    group_by(region) %>%
-    mutate(
-      measure = sub("comb_([a-z]+)_r([0-9]{1})", "\\1", region),
-      region = as.numeric(sub("comb_([a-z]+)_r([0-9]{1})", "\\2", region))
-    ) %>%
+  mutate(region = path_ext_remove(path_file(region))) %>%
+  group_by(region) %>%
+  mutate(
+    measure = sub("comb_([a-z]+)_r([0-9]{1})", "\\1", region),
+    region = as.numeric(sub("comb_([a-z]+)_r([0-9]{1})", "\\2", region))
+  ) %>%
   ungroup() %>%
   relocate(measure) %>%
-  kable
-
-
-
+  kable()
 ```
 
 ```{r plots-pooled, results = "markup"}
-
 post_plots("comb", NULL, .return = "available")
 post_plots("comb", NULL, make_plot_func = pp_check, .return = "available")
-
 ```
 
 
@@ -249,91 +244,74 @@ Summaries of the posterior distribution:
 
 ```{r bf_helpers }
 
-path_models <- "models/subj_mm"
-path_results <- "results/subj_mm"
+bf_table_eval <- FALSE
 
 rename_summary <- function(dataf) {
   dataf %>%
     mutate(region = path_ext_remove(path_file(region))) %>%
     group_by(region) %>%
     mutate(
-      measure = sub("bf_([a-z]+)([0-9]{1}).*", "\\1", region),
-      region = as.numeric(sub("bf_([a-z]+)([0-9]{1}).*", "\\2", region))
+      measure = sub("bf_(totfixdur|tgdur)subj.*", "\\1", region),
+      region = as.numeric(sub("bf_.*?([0-9]{1}).*", "\\1", region))
     ) %>%
     ungroup() %>%
     relocate(measure)
 }
 
+bf_models_sum <- function(re) {
+  files <- dir_ls(here("models"), regexp = re) %>%
+    path_file() %>%
+    path_ext_remove()
 
-bf_table <- function(paths) {
-  map_dfr(paths, read_csv, .id = "region") %>%
-    mutate(region = path_ext_remove(path_file(region))) %>%
-    group_by(region) %>%
-    summarise("mean bf_10"= mean(bf_10), sd = sd(bf_10)) %>%
+  cat(paste0("    ", files, collapse = "\n"))
+
+  dir_ls(here("models"), regexp = re) %>%
+    map(readRDS) %>%
+    msummary() %>%
     rename_summary() %>%
     kable()
 }
 
+
+bf_table <- function(subj, mu, sigma) {
+  read_csv(here("results/bayes_factor.csv")) %>%
+    filter(subj_cond == subj, mu == mu, sigma == sigma) %>%
+    group_by(dv_name, region) %>%
+    summarise("mean bf_10" = mean(bf_10), sd = sd(bf_10))
+}
 ```
 
-```{r bf_model1 }
-
-dir_ls(here(path_models), regexp = "bf_.*sd1") %>%
-  map(readRDS) %>%
-  msummary() %>%
-  rename_summary() %>%
-  kable()
+```{r bf_model1}
+bf_models_sum("bf_.*subj_mis.*m0sd1")
 ```
 
-Bayes factor (mean of 5 runs):
 
-```{r bftable1 }
-
-dir_ls(here(path_results), regexp = "bf_.*sd1") %>%
-  bf_table()
-
+```{r bftable1, eval = bf_table_eval}
+bf_table("MIS", 0, 1)
 ```
 
 #### mu = 0, sigma = 0.1
 
 ```{r bfmodel3 }
-
-
-dir_ls(here(path_models), regexp = "bf_.*sd0\\.1") %>%
-  map(readRDS) %>%
-  msummary() %>%
-  rename_summary() %>%
-  kable()
+bf_models_sum("bf_.*subj_mis.*m0sd0\\.1")
 ```
 
 Bayes factor (mean of 5 runs):
 
-```{r bftable3 }
-
-dir_ls(here(path_results), regexp = "bf_.*sd0\\.1") %>%
-  bf_table()
-
+```{r bftable3, eval = bf_table_eval}
+bf_table("MIS", 0, 0.1)
 ```
 
 #### mu = 0, sigma = 0.03
 
 ```{r bfmodel2 }
-
-dir_ls(here(path_models), regexp = "bf_.*sd0\\.03") %>%
-  map(readRDS) %>%
-  msummary() %>%
-  rename_summary() %>%
-  kable()
-
+bf_models_sum("bf_.*subj_mis.*m0sd0\\.03")
 ```
 
 Bayes factor (mean of 5 runs):
 
-```{r bftable2 }
-
-dir_ls(here(path_results), regexp = "bf_.*sd003") %>%
-  bf_table()
-
+```{r bftable_, eval = bf_table_eval}
+bf_table("MIS", 0, 0.03)
 ```
 
 
@@ -352,21 +330,11 @@ This matches what we have in these conditions:
 2. MM_M (MisMatch_Match) De professor heeft geen dochter. De laatste paar jaar werkte zij helaas op alle feestdagen. (+1, "dochter" interferes)
 
 ```{r bfmodel4 }
-
-
-dir_ls(here(path_models), regexp = "bf_.*m-0.03sd0\\.009") %>%
-  map(readRDS) %>%
-  msummary() %>%
-  rename_summary() %>%
-  kable()
-
+bf_models_sum("bf_.*subj_mis.*m-0\\.03sd0\\.009")
 ```
 
-```{r bftable4 }
-
-dir_ls(here(path_results), regexp = "bf_.*mu-0.03sd0\\.009") %>%
-  bf_table()
-
+```{r bftable, eval = bf_table_eval }
+bf_table("MIS", mu = -0.03, sigma = 0.009)
 ```
 
 #### mu -0.027, sigma = 0.009
@@ -374,20 +342,11 @@ dir_ls(here(path_results), regexp = "bf_.*mu-0.03sd0\\.009") %>%
 
 ```{r bfmodel5 }
 
-
-dir_ls(here(path_models), regexp = "bf_.*m-0.027sd0\\.009") %>%
-  map(readRDS) %>%
-  msummary() %>%
-  rename_summary() %>%
-  kable()
-
+bf_models_sum("bf_.*subj_mis.*m-0\\.027sd0\\.009")
 ```
 
-```{r bftable5 }
-
-dir_ls(here(path_results), regexp = "bf_.*mu-0.027sd0\\.009") %>%
-  bf_table()
-
+```{r bftable5, eval = bf_table_eval }
+bf_table("MIS", mu = -0.027, sigma = 0.009)
 ```
 
 ### Subject match
@@ -397,71 +356,41 @@ dir_ls(here(path_results), regexp = "bf_.*mu-0.027sd0\\.009") %>%
 This is a bit silly, sigma this wide gives extreme support for the null.
 Summaries of the posterior distribution:
 
-```{r bf_helpers_ma }
-
-path_models <- "models/subj_ma"
-path_results <- "results/subj_ma"
-
-```
-
 ```{r bf_model_ma_1 }
-
-dir_ls(here(path_models), regexp = "bf_.*sd1") %>%
-  map(readRDS) %>%
-  msummary() %>%
-  rename_summary() %>%
-  kable()
+bf_models_sum("bf_.*subj_match.*m0sd1")
 ```
 
 Bayes factor (mean of 5 runs):
 
-```{r bftable_ma_1 }
-
-dir_ls(here(path_results), regexp = "bf_.*sd1") %>%
-  bf_table()
-
+```{r bftable_ma_1, eval = bf_table_eval }
+bf_table("MATCH", mu = 0, sigma = 1)
 ```
 
 #### mu = 0, sigma = 0.1
 
 ```{r bfmodel_ma_3 }
-
-
-dir_ls(here(path_models), regexp = "bf_.*sd0\\.1") %>%
-  map(readRDS) %>%
-  msummary() %>%
-  rename_summary() %>%
-  kable()
+bf_models_sum("bf_.*subj_match.*m0sd0\\.1")
 ```
 
 Bayes factor (mean of 5 runs):
 
-```{r bftable_ma_3 }
+```{r bftable_ma_3, eval = bf_table_eval }
 
-dir_ls(here(path_results), regexp = "bf_.*sd0\\.1") %>%
-  bf_table()
-
+bf_table("MATCH", mu = 0, sigma = 0.1)
 ```
 
 #### mu = 0, sigma = 0.03
 
 ```{r bfmodel_ma_2 }
 
-dir_ls(here(path_models), regexp = "bf_.*sd0\\.03") %>%
-  map(readRDS) %>%
-  msummary() %>%
-  rename_summary() %>%
-  kable()
-
+bf_models_sum("bf_.*subj_match.*m0sd0\\.03")
 ```
 
 Bayes factor (mean of 5 runs):
 
-```{r bftable_ma_2 }
+```{r bftable_ma_, eval = bf_table_eval }
 
-dir_ls(here(path_results), regexp = "bf_.*sd0\\.03") %>%
-  bf_table()
-
+bf_table("MATCH", mu = 0, sigma = 0.03)
 ```
 
 
@@ -471,20 +400,12 @@ For explanation see subject mis-match. Note that for subject match the contrasts
 
 ```{r bfmodel_ma_4 }
 
-
-dir_ls(here(path_models), regexp = "bf_.*m-0\\.03sd0\\.009") %>%
-  map(readRDS) %>%
-  msummary() %>%
-  rename_summary() %>%
-  kable()
-
+bf_models_sum("bf_.*subj_match.*m-0\\.03sd0\\.009")
 ```
 
-```{r bftable_ma_4 }
+```{r bftable_ma_4, eval = bf_table_eval }
 
-dir_ls(here(path_results), regexp = "bf_.*mu-0\\.03_sd0\\.009") %>%
-  bf_table()
-
+bf_table("MATCH", mu = -0.03, sigma = 0.009)
 ```
 
 #### mu -0.027, sigma = 0.009
@@ -492,18 +413,11 @@ dir_ls(here(path_results), regexp = "bf_.*mu-0\\.03_sd0\\.009") %>%
 
 ```{r bfmodel_ma_5 }
 
-
-dir_ls(here(path_models), regexp = "bf_.*m-0.027sd0\\.009") %>%
-  map(readRDS) %>%
-  msummary() %>%
-  rename_summary() %>%
-  kable()
+bf_models_sum("bf_.*subj_match.*m-0\\.027sd0\\.009")
 
 ```
 
-```{r bftable_ma_5 }
+```{r bftable_ma_5, eval = bf_table_eval }
 
-dir_ls(here(path_results), regexp = "bf_.*mu-0\\.027_sd0\\.009") %>%
-  bf_table()
-
+bf_table("MATCH", mu = -0.027, sigma = 0.009)
 ```
