@@ -32,7 +32,7 @@ in let
   };
 
 in pkgs.mkShell {
-  nativeBuildInputs = [ myR pkgs.gcc ];
+  nativeBuildInputs = [ myR pkgs.gcc pkgs.pandoc];
   shellHook = ''
     [ -e "$HOME"/.R/Makevars ] && mv -v "$HOME"/.R/Makevars{,_backup}
     trap ./shellExitHook.sh EXIT
