@@ -45,6 +45,8 @@ make_plot <- compose(
 ## "available" uses models from the models dir which match a var_name.
 ## In that case var_name is the regex pattern prefixed by with /
 ## and data_list can be empty.
+## You can also supply your own regular expression as a parameter re.
+## This only works when .return == "available".
 ##
 ## "full_models" will try to get the full models using the
 ## function from the 03-models.R.
@@ -53,6 +55,7 @@ make_plot <- compose(
 ## is available).
 post_plots <- function(var_name, data_list,
                        make_plot_func = make_plot,
+                       re = NULL,
                        .return = c(
                          "available",
                          "full_models",
@@ -61,7 +64,8 @@ post_plots <- function(var_name, data_list,
   .return <- match.arg(.return)
 
   if (.return == "available") {
-    dir_ls(here("models"), regex = paste0("/", var_name)) %>%
+    re <- if_else(is.null(re), var_name, re)
+    dir_ls(here("models"), regexp = paste0("/", re)) %>%
       set_names(compose(path_file, path_ext_remove)) %>%
       map(readRDS) %>%
       map(make_plot_func)
@@ -74,15 +78,6 @@ post_plots <- function(var_name, data_list,
     fit_split(data_list, var_name) %>%
       map(~ map(.x, ~ make_plot_func(.x)))
   }
-  ## fit_models(data_list, var_name, ...) %>%
-  ##   modify_at(
-  ##     "full_models",
-  ##     ~ map(.x, ~ make_plot_func(.x))
-  ##   ) %>%
-  ##   modify_at(
-  ##     "split_models",
-  ##     ~ map(.x, ~ map(.x, ~ make_plot_func(.x)))
-  ##   )
 }
 
 relabel_samples <- function(labelled_smpls) {
