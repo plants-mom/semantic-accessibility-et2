@@ -58,9 +58,6 @@ rts_sum <- function(all_data) {
 ## gbck should be called rp
 
 
-## remove 0s from gbck!
-## check what does 0 in rr mean
-
 counts_sum <- function(all_data) {
   counts <- c("gbck", "rr")
   groups <- c("region", "subj_cond", "obj_cond")
