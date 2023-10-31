@@ -1,1 +1,30 @@
+
+.DS_Store
+.idea
+*.log
+*.rds
+*.aux
+.RData
+*.pdf
+/.dir-locals.el
+/.projectile
+
+
+# directories
+tmp/
+archive/
 *cache/
+.auctex-auto/
+
+# keep these directories, but not their contents
+/figs/**
+!/figs/**/
+!/figs/**/.gitkeep
+
+/results/**
+!/results/**/
+!/results/**/.gitkeep
+
+/models/**
+!/models/**/
+!/models/**/.gitkeep
