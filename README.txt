@@ -11,9 +11,7 @@ packages available in your shell. You have to have nix installed
 
 The file src/default.nix will also temporarily move your ~/.R/Makevars file and
 restore it once you exit the shell. This is because, there were some issues with
-the recommended Makevars settings and the brms version used for this project. To
-make sure it works as intended, check if the file src/shellExitHook.sh is
-executable. If you never set Makevars you can ignore this part.
+the recommended Makevars settings and the brms version used for this project.
 After you did all that, in the project root run:
 
 nix-shell src/default.nix --pure
