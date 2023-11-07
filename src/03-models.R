@@ -131,8 +131,7 @@ get_model <- function(dv_name, region, type = "full_models") {
 }
 
 fit_split_models <- function(data_list) {
-  ## c("totfixdur", "tgdur") %>%
-  c("tgdur") %>%
+  c("totfixdur", "tgdur") %>%
     walk(~ split_models(data_list, ., .priors = priors))
 }
 
