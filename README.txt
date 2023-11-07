@@ -9,10 +9,12 @@ There is a default.nix file in the src dir which will make all the relevant
 packages available in your shell. You have to have nix installed
 (https://nixos.org/download).
 
-The file src/default.nix will also temporarily move your ~/.R/Makevars file and
+Note that the file src/default.nix will also temporarily move your ~/.R/Makevars file and
 restore it once you exit the shell. This is because, there were some issues with
 the recommended Makevars settings and the brms version used for this project.
-After you did all that, in the project root run:
+If you never adjusted Makevars you don't have to worry about this.
+
+To recreate the project run in the project root:
 
 nix-shell src/default.nix --pure
 
