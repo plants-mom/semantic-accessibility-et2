@@ -24,6 +24,7 @@ archive/
 /results/**
 !/results/**/
 !/results/**/.gitkeep
+!/results/**/bayes_factor.csv
 
 /models/**
 !/models/**/
