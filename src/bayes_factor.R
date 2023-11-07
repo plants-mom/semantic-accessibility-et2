@@ -7,7 +7,6 @@ here::i_am("src/bayes_factor.R")
 
 library(here)
 library(fs)
-library(memuse) ## this is just for me
 library(brms)
 library(dplyr)
 library(readr)
@@ -120,10 +119,6 @@ bf_stability <- function(samples,
 
   for (n in seq(iters)) {
     message(paste(format(Sys.time(), "%H:%M:%S"), n, "out of", iters))
-    message("Memory info:")
-    print(Sys.meminfo())
-    message("Memory used by R:")
-    print(Sys.procmem())
 
     model1_up <- update(model1,
       iter = samples, warmup = 2000,
@@ -177,12 +172,10 @@ sensitivity <- function() {
     mutate(
       p_sigma = rep(c(1, 0.1, 0.03, 0.009, 0.009), 8)
     )
+
   ## this might need to be run in batches
   ## remove the rows which were run like this: params <- params[-c(1:18), ]
-
-  params %>%
-    filter(dv_name == "totfixdur", subj_c == "MIS", region_no == 7) %>%
-    pwalk(., bf_stability)
+  pwalk(params, bf_stability)
 }
 
 
