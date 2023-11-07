@@ -11,7 +11,6 @@ in let
   myR = pkgs.rWrapper.override {
     packages = with pkgs.rPackages; [
       MASS
-      memuse
       here
       RColorBrewer
       bayesplot
