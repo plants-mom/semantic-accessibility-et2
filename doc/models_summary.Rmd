@@ -1,6 +1,5 @@
 ---
 title: "Semantic inaccessibility and interference (replication): eye-tracking models"
-author: anonymous
 output: 
   html_document:
     toc: true
@@ -45,15 +44,6 @@ dfs[[1]] %>%
     subj_contrast = first(su),
     obj_contrast = first(ob)
   ) %>%
-  ## mutate("subj x obj" = subj_contrast * obj_contrast,
-  ##        ## subj
-  ##        typic_cond = if_else(typic_cond == "atypical",
-  ##                             "mis", "match"),
-  ##        ## obj
-  ##        interf_cond = if_else(interf_cond == "interf",
-  ##                              "match", "mis"),
-  ##        "condition (subj, obj)" = paste(typic_cond, interf_cond,
-  ##                                               sep = ", ")) %>%
   mutate(
     "subj x obj" = subj_contrast * obj_contrast,
     subj_cond = if_else(subj_cond == "M",
@@ -244,8 +234,6 @@ Summaries of the posterior distribution:
 
 ```{r bf_helpers }
 
-bf_table_eval <- FALSE
-
 rename_summary <- function(dataf) {
   dataf %>%
     mutate(region = path_ext_remove(path_file(region))) %>%
@@ -258,12 +246,14 @@ rename_summary <- function(dataf) {
     relocate(measure)
 }
 
-bf_models_sum <- function(re) {
-  files <- dir_ls(here("models"), regexp = re) %>%
-    path_file() %>%
-    path_ext_remove()
+bf_models_sum <- function(re, debug = FALSE) {
+  if (debug == TRUE) {
+    files <- dir_ls(here("models"), regexp = re) %>%
+      path_file() %>%
+      path_ext_remove()
 
-  cat(paste0("    ", files, collapse = "\n"))
+    cat(paste0("    ", files, collapse = "\n"))
+  }
 
   dir_ls(here("models"), regexp = re) %>%
     map(readRDS) %>%
@@ -273,11 +263,12 @@ bf_models_sum <- function(re) {
 }
 
 
-bf_table <- function(subj, mu, sigma) {
+bf_table <- function(.subj, .mu, .sigma) {
   read_csv(here("results/bayes_factor.csv")) %>%
-    filter(subj_cond == subj, mu == mu, sigma == sigma) %>%
+    filter(subj_cond == .subj, mu == .mu, sigma == .sigma) %>%
     group_by(dv_name, region) %>%
-    summarise("mean bf_10" = mean(bf_10), sd = sd(bf_10))
+    summarise("mean bf_10" = mean(bf_10), sd = sd(bf_10)) %>%
+    kable()
 }
 ```
 
@@ -286,7 +277,8 @@ bf_models_sum("bf_.*subj_mis.*m0sd1")
 ```
 
 
-```{r bftable1, eval = bf_table_eval}
+Bayes factor (mean of 5 runs):
+```{r bftable1}
 bf_table("MIS", 0, 1)
 ```
 
@@ -298,7 +290,7 @@ bf_models_sum("bf_.*subj_mis.*m0sd0\\.1")
 
 Bayes factor (mean of 5 runs):
 
-```{r bftable3, eval = bf_table_eval}
+```{r bftable3}
 bf_table("MIS", 0, 0.1)
 ```
 
@@ -310,7 +302,7 @@ bf_models_sum("bf_.*subj_mis.*m0sd0\\.03")
 
 Bayes factor (mean of 5 runs):
 
-```{r bftable_, eval = bf_table_eval}
+```{r bftable_}
 bf_table("MIS", 0, 0.03)
 ```
 
@@ -329,24 +321,27 @@ This matches what we have in these conditions:
 1. MM_MM (MisMatch_MisMatch) De professor heeft geen zoon. De laatste paar jaar werkte zij helaas op alle feestdagen. (-1, no interference)
 2. MM_M (MisMatch_Match) De professor heeft geen dochter. De laatste paar jaar werkte zij helaas op alle feestdagen. (+1, "dochter" interferes)
 
+<!-- end of list -->
+
 ```{r bfmodel4 }
 bf_models_sum("bf_.*subj_mis.*m-0\\.03sd0\\.009")
 ```
 
-```{r bftable, eval = bf_table_eval }
-bf_table("MIS", mu = -0.03, sigma = 0.009)
+Bayes factor (mean of 5 runs):
+```{r bftable}
+bf_table("MIS", .mu = -0.03, .sigma = 0.009)
 ```
 
 #### mu -0.027, sigma = 0.009
 
 
 ```{r bfmodel5 }
-
 bf_models_sum("bf_.*subj_mis.*m-0\\.027sd0\\.009")
 ```
 
-```{r bftable5, eval = bf_table_eval }
-bf_table("MIS", mu = -0.027, sigma = 0.009)
+Bayes factor (mean of 5 runs):
+```{r bftable5}
+bf_table("MIS", .mu = -0.027, .sigma = 0.009)
 ```
 
 ### Subject match
@@ -362,8 +357,8 @@ bf_models_sum("bf_.*subj_match.*m0sd1")
 
 Bayes factor (mean of 5 runs):
 
-```{r bftable_ma_1, eval = bf_table_eval }
-bf_table("MATCH", mu = 0, sigma = 1)
+```{r bftable_ma_1}
+bf_table("MATCH", .mu = 0, .sigma = 1)
 ```
 
 #### mu = 0, sigma = 0.1
@@ -374,9 +369,9 @@ bf_models_sum("bf_.*subj_match.*m0sd0\\.1")
 
 Bayes factor (mean of 5 runs):
 
-```{r bftable_ma_3, eval = bf_table_eval }
+```{r bftable_ma_3}
 
-bf_table("MATCH", mu = 0, sigma = 0.1)
+bf_table("MATCH", .mu = 0, .sigma = 0.1)
 ```
 
 #### mu = 0, sigma = 0.03
@@ -388,9 +383,9 @@ bf_models_sum("bf_.*subj_match.*m0sd0\\.03")
 
 Bayes factor (mean of 5 runs):
 
-```{r bftable_ma_, eval = bf_table_eval }
+```{r bftable_ma_}
 
-bf_table("MATCH", mu = 0, sigma = 0.03)
+bf_table("MATCH", .mu = 0, .sigma = 0.03)
 ```
 
 
@@ -403,9 +398,11 @@ For explanation see subject mis-match. Note that for subject match the contrasts
 bf_models_sum("bf_.*subj_match.*m-0\\.03sd0\\.009")
 ```
 
-```{r bftable_ma_4, eval = bf_table_eval }
+Bayes factor (mean of 5 runs):
 
-bf_table("MATCH", mu = -0.03, sigma = 0.009)
+```{r bftable_ma_4}
+
+bf_table("MATCH", .mu = -0.03, .sigma = 0.009)
 ```
 
 #### mu -0.027, sigma = 0.009
@@ -414,10 +411,11 @@ bf_table("MATCH", mu = -0.03, sigma = 0.009)
 ```{r bfmodel_ma_5 }
 
 bf_models_sum("bf_.*subj_match.*m-0\\.027sd0\\.009")
-
 ```
 
-```{r bftable_ma_5, eval = bf_table_eval }
+Bayes factor (mean of 5 runs):
 
-bf_table("MATCH", mu = -0.027, sigma = 0.009)
+```{r bftable_ma_5}
+
+bf_table("MATCH", .mu = -0.027, .sigma = 0.009)
 ```
