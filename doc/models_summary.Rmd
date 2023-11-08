@@ -1,10 +1,13 @@
 ---
-title: "Semantic inaccessibility and interference (replication): eye-tracking models"
+title: "Semantic inaccessibility and interference: eye-tracking models. Follow up experiment and combined data"
 output: 
   html_document:
     toc: true
     toc_float: true
+    number_sections: true
 ---
+
+This document presents summaries from eye-tracking experiments described in the paper: "Semantic accessibility and interference in pronoun resolution". First section contains summaries for the experiment 4 ("Follow-up experiment"). Second section contains Bayes factor summaries and pooled data analysis ("Combined analysis of eye-tracking experiments").
 
 ```{r cod1, echo=FALSE, message=FALSE, warning=FALSE, cache=FALSE}
 
@@ -35,6 +38,7 @@ res <- dir_ls(here("results"), regexp = "[a-z]{2,}_((split)|(full))") %>%
   mutate(source = path_file(source))
 ```
 
+# Experiment 4: Follow-up eye-tracking experiment with only non-referential condition
 
 Contrasts:
 ```{r contrasts-table }
@@ -73,8 +77,6 @@ dfs[[1]] %>%
 
 Total fixations, all regions.
 
-Full models.
-
 ```{r tot }
 res %>%
   filter(source == "totfixdur_full_models.csv") %>%
@@ -83,16 +85,14 @@ res %>%
 ```
 
 ```{r pps1, results = "markup" }
-post_plots("totfixdur", dfs)
-post_plots("totfixdur", dfs, make_plot_func = pp_check)
+post_plots("totfixdur", dfs, .re = "totfixdur_r[5-8].rds")
+post_plots("totfixdur", dfs, make_plot_func = pp_check, .re = "totfixdur_r[5-8].rds")
 ```
 
 
 ## Re-reading duration
 
 Data was excluded when the subj did not re-read the region.
-
-Full models.
 
 ```{r rrdur }
 res %>%
@@ -109,7 +109,7 @@ post_plots("rrdur", dfs, make_plot_func = pp_check)
 
 ## First pass regression path
 
-`rpdur`
+Also called `rpdur`.
 
 ```{r rpdur }
 res %>%
@@ -153,14 +153,13 @@ res %>%
 ```
 
 ```{r pps_tgdur, results = "markup" }
-post_plots("tgdur", dfs, re = "tgdur_r[5-8].rds")
-post_plots("tgdur", dfs, make_plot_func = pp_check, re = "tgdur_r[5-8].rds")
+post_plots("tgdur", dfs, .re = "tgdur_r[5-8].rds")
+post_plots("tgdur", dfs, make_plot_func = pp_check, .re = "tgdur_r[5-8].rds")
 ```
 
 ## Regressions
 
 Probability of regression, `abs(gbck - 2)`. Bernoulli likelihood with logistic link, results on the logistic scale.
-Full models.
 
 ```{r gbck }
 res %>%
@@ -189,16 +188,16 @@ res %>%
 ```
 
 ```{r pps_rr, results = "markup" }
-post_plots("rr", dfs)
-post_plots("rr", dfs, make_plot_func = pp_check)
+post_plots("rr", dfs, .re = "rr_r[5-8].rds")
+post_plots("rr", dfs, make_plot_func = pp_check, .re = "rr_r[5-8].rds")
 ```
 
-## Bayes factor and combined models
+# Combined analysis of eye-tracking experiments
 
-This section presents the result of the models fit to the data combined from the two experiments.
+This section presents the result of the models fit to the data combined from the two experiments, and bayes factor analysis of these data.
 The Bayes factor is always 10 i.e. the ratio of alternative to the null.
 
-### Pooled data
+## Pooled data
 
 Models fit to the data combined from the both experiments (without subsetting on subject condition).
 
@@ -225,9 +224,13 @@ post_plots("comb", NULL, make_plot_func = pp_check, .return = "available")
 
 
 
-### Subject mis-match
+## Subject mis-match
 
-#### mu = 0, sigma = 1
+Models fit to the data combined from the both experiments, subset of the data where subject mismatched.
+Numbers in the headers specify the parameters for the prior distribution on the slope of the object condition, used to fit the models and compute bayes factor.
+This was a Normal distribution. For example mu = 0, sigma = 1 means that the prior was Normal(0, 1).
+
+### mu = 0, sigma = 1
 
 This is a bit silly, sigma this wide gives extreme support for the null.
 Summaries of the posterior distribution:
@@ -246,6 +249,7 @@ rename_summary <- function(dataf) {
     relocate(measure)
 }
 
+## debug = TRUE will print the models above the result table
 bf_models_sum <- function(re, debug = FALSE) {
   if (debug == TRUE) {
     files <- dir_ls(here("models"), regexp = re) %>%
@@ -282,7 +286,7 @@ Bayes factor (mean of 5 runs):
 bf_table("MIS", 0, 1)
 ```
 
-#### mu = 0, sigma = 0.1
+### mu = 0, sigma = 0.1
 
 ```{r bfmodel3 }
 bf_models_sum("bf_.*subj_mis.*m0sd0\\.1")
@@ -294,7 +298,7 @@ Bayes factor (mean of 5 runs):
 bf_table("MIS", 0, 0.1)
 ```
 
-#### mu = 0, sigma = 0.03
+### mu = 0, sigma = 0.03
 
 ```{r bfmodel2 }
 bf_models_sum("bf_.*subj_mis.*m0sd0\\.03")
@@ -307,7 +311,7 @@ bf_table("MIS", 0, 0.03)
 ```
 
 
-#### mu = -0.03, sigma = 0.009
+### mu = -0.03, sigma = 0.009
 
 These are the priors determined taken from the metaanalysis (Jager et al 2017).
 The mean effect in the metaanalysis is -22 ms. This is assuming (+1/-1) contrast coding:
@@ -332,7 +336,7 @@ Bayes factor (mean of 5 runs):
 bf_table("MIS", .mu = -0.03, .sigma = 0.009)
 ```
 
-#### mu -0.027, sigma = 0.009
+### mu -0.027, sigma = 0.009
 
 
 ```{r bfmodel5 }
@@ -344,9 +348,13 @@ Bayes factor (mean of 5 runs):
 bf_table("MIS", .mu = -0.027, .sigma = 0.009)
 ```
 
-### Subject match
+## Subject match
 
-#### mu = 0, sigma = 1
+Models fit to the data combined from the both experiments, subset of the data where subject matched.
+Numbers in the headers specify the parameters for the prior distribution on the slope of the object condition, used to fit the models and compute bayes factor.
+This was a Normal distribution. For example mu = 0, sigma = 1 means that the prior was Normal(0, 1).
+
+### mu = 0, sigma = 1
 
 This is a bit silly, sigma this wide gives extreme support for the null.
 Summaries of the posterior distribution:
@@ -361,7 +369,7 @@ Bayes factor (mean of 5 runs):
 bf_table("MATCH", .mu = 0, .sigma = 1)
 ```
 
-#### mu = 0, sigma = 0.1
+### mu = 0, sigma = 0.1
 
 ```{r bfmodel_ma_3 }
 bf_models_sum("bf_.*subj_match.*m0sd0\\.1")
@@ -374,7 +382,7 @@ Bayes factor (mean of 5 runs):
 bf_table("MATCH", .mu = 0, .sigma = 0.1)
 ```
 
-#### mu = 0, sigma = 0.03
+### mu = 0, sigma = 0.03
 
 ```{r bfmodel_ma_2 }
 
@@ -389,7 +397,7 @@ bf_table("MATCH", .mu = 0, .sigma = 0.03)
 ```
 
 
-#### mu = -0.03, sigma = 0.009
+### mu = -0.03, sigma = 0.009
 
 For explanation see subject mis-match. Note that for subject match the contrasts are opposite.
 
@@ -405,7 +413,7 @@ Bayes factor (mean of 5 runs):
 bf_table("MATCH", .mu = -0.03, .sigma = 0.009)
 ```
 
-#### mu -0.027, sigma = 0.009
+### mu = -0.027, sigma = 0.009
 
 
 ```{r bfmodel_ma_5 }
