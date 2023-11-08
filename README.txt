@@ -1,9 +1,11 @@
 This repository contains the data and the code for the analysis of the second
-eye-tracking experiment (referred to as "experiment 4" in the paper) described
-in the paper "Semantic accessibility and interference in pronoun resolution".
-See this osf repository for details: https://osf.io/xznw7/
-If you just want to examine the results feel free to download doc/models_summary.html.
-This file contains all the results. If you want to reproduce the analysis, read on.
+eye-tracking experiment (referred to as "experiment 4" in the paper), and the
+analysis of the data pooled from the first (referred to as "experiment 2" in the
+paper) and the second eye-tracking experiments described in the paper "Semantic
+accessibility and interference in pronoun resolution". See this osf repository
+for details: https://osf.io/xznw7/ If you just want to examine the results feel
+free to download doc/models_summary.html. This file contains all the results. If
+you want to reproduce the analysis, read on.
 
 There is a default.nix file in the src dir which will make all the relevant
 packages available in your shell. You have to have nix installed
