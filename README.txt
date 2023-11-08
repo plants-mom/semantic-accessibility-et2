@@ -65,5 +65,4 @@ Contents of the project directory:
    ├── default.nix: nix file with a recipe for the shell (see above)
    ├── descriptive.R: creates latex tables with descriptive summaries used in the paper
    ├── plots.R: plot used in the paper, files starting with 01,02,03 have to be run before
-   ├── priors.R: priors for the bayesian models
-   └── shellExitHook.sh: exit hook for the nix shell, see above
+   └── priors.R: priors for the bayesian models
