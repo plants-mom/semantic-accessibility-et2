@@ -48,8 +48,14 @@ rts_sum <- function(all_data) {
   rts_summary$region <- cleanf(rts_summary$region)
   rts_summary$measure <- cleanf(rts_summary$measure)
 
-  print(xtable(rts_summary),
-    include.rownames = FALSE, file = here("results/rts_summary.tex")
+  tbl <- xtable(rts_summary,
+    caption = "Experiment 4: Mean raw reading times by measure and condition"
+  )
+  print(tbl,
+    include.rownames = FALSE,
+    tabular.environment = "longtable", print.results = FALSE,
+    caption.placement = "top",
+    floating = FALSE
   )
 }
 
@@ -84,16 +90,48 @@ counts_sum <- function(all_data) {
   count_summary$region <- cleanf(count_summary$region)
   count_summary$measure <- cleanf(count_summary$measure)
 
-  print(xtable(count_summary),
-    include.rownames = FALSE, file = here("results/count_summary.tex")
+
+  tbl <- xtable(count_summary,
+    caption = "Experiment 4: Count summary by measure and condition"
+  )
+  print(tbl,
+    include.rownames = FALSE,
+    tabular.environment = "longtable", print.results = FALSE,
+    caption.placement = "top",
+    floating = FALSE
   )
 }
 
 main <- function() {
-  all_data <- dir_ls(here("results"), regexp = "/region[0-9].csv") %>%
-    map_dfr(read_csv)
-  counts_sum(all_data)
-  rts_sum(all_data)
+all_data <- dir_ls(here("results"), regexp = "/region[0-9].csv") %>%
+  map_dfr(read_csv) %>%
+  mutate(
+    region = case_when(
+      region == 1 ~ "subject",
+      region == 2 ~ "verb",
+      region == 3 ~ "object",
+      region == 4 ~ "wrap-up1",
+      region == 5 ~ "pre-critical",
+      region == 6 ~ "critical",
+      region == 7 ~ "post-critical",
+      region == 8 ~ "wrap-up2"
+    ),
+    region = factor(region,
+      levels = c("subject", "verb", "object",
+                 "wrap-up1", "pre-critical",
+                 "critical", "post-critical", "wrap-up2"),
+      ordered = TRUE
+    )
+  )
+  file_conn <- file(here("results/descriptive.tex"))
+  writeLines(c(
+    "\\documentclass{article}",
+    "\\usepackage{longtable}\n\\begin{document}",
+    rts_sum(all_data),
+    counts_sum(all_data),
+    "\\end{document}"
+  ), file_conn)
+  close(file_conn)
 }
 
 if (sys.nframe() == 0) {
