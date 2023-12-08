@@ -6,6 +6,7 @@
 *.aux
 .RData
 *.pdf
+!descriptive.pdf
 /.dir-locals.el
 /.projectile
 
